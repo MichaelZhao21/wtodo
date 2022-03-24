@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+// Just in case we have a version update that breaks the data file
+// this version is written to the top of the data file to be compared
+// Currently, this value is IGNORED
+const Version = "1"
+
 type TaskLength int
 
 const (
@@ -118,13 +123,17 @@ func load(todos *[]Item, finished *[]Item) {
 
 	// Read the first line in the file
 	// If empty, then it is a new file!
+	// Otherwise, it would be the version and we just ignore it
 	scan.Scan()
 	s := scan.Text()
 	if len(s) == 0 {
 		return
 	}
 
-	// Split the line and get the length of 2 arrays
+	// Scan the scond line and split it
+	// to get the length of 2 arrays
+	scan.Scan()
+	s = scan.Text()
 	ss := strings.Split(s, " ")
 	todosLen, _ := strconv.Atoi(ss[0])
 	finishedLen, _ := strconv.Atoi(ss[1])
@@ -167,6 +176,10 @@ func readItem(scan *bufio.Scanner) Item {
 func save(todos *[]Item, finished *[]Item) {
 	// Instantiate the stringbuilder
 	sb := strings.Builder{}
+
+	// Write the version on the first line
+	sb.WriteString(Version)
+	sb.WriteString("\n")
 
 	// Save lengths of the arrays
 	sb.WriteString(strconv.Itoa(len(*todos)))
