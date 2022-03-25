@@ -26,40 +26,42 @@ type Item struct {
 	Start    time.Time
 	Length   TaskLength
 	Priority int
+	Finished bool
 }
 
 // Command: wtodo <action> [tags] <text>
 func main() {
 	// Define lists
 	var todos []Item
-	var finished []Item
+
+	// TEST CASES
+	// todos = append(todos, Item{0, "This is the name of the todo", time.Now(), time.Time{}, ShortTask, 2, false})
 
 	// Load data from file
-	load(&todos, &finished)
+	load(&todos)
 
 	// Case where there are no command line arguments
 	if len(os.Args[1:]) < 1 {
-		list(todos, finished)
+		list(todos)
 		return
 	}
 
 	// Run commands based on the action statement
 	switch os.Args[1] {
 	case "add", "insert", "a", "i":
-		fmt.Printf("Add!\n")
+		addItem(&todos)
 	case "edit", "e":
-		fmt.Printf("Edit!\n")
-		edit()
+		editItem(&todos)
 	case "finish", "f":
-		fmt.Printf("Finish!\n")
+		finishItem(&todos)
 	case "delete", "d":
-		fmt.Printf("Delete!\n")
+		deleteItem(&todos)
 	default:
 		fmt.Fprintln(os.Stderr, "Invalid Action:", os.Args[1], "\nUsage: wtodo <action> [tags] <text>")
 		os.Exit(1)
 	}
 
 	// Save data and exit
-	save(&todos, &finished)
+	save(&todos)
 	os.Exit(0)
 }

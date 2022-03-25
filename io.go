@@ -11,7 +11,7 @@ import (
 )
 
 // Load data from file
-func load(todos *[]Item, finished *[]Item) {
+func load(todos *[]Item) {
 	// Open data file
 	f, err := os.OpenFile("wtodo.dat", os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
@@ -35,17 +35,11 @@ func load(todos *[]Item, finished *[]Item) {
 	// Scan the scond line and split it
 	// to get the length of 2 arrays
 	scan.Scan()
-	s = scan.Text()
-	ss := strings.Split(s, " ")
-	todosLen, _ := strconv.Atoi(ss[0])
-	finishedLen, _ := strconv.Atoi(ss[1])
+	todosLen, _ := strconv.Atoi(scan.Text())
 
 	// Iterate through both arrays and save all values
 	for i := 0; i < todosLen; i++ {
 		*todos = append(*todos, readItem(scan))
-	}
-	for i := 0; i < finishedLen; i++ {
-		*finished = append(*finished, readItem(scan))
 	}
 }
 
@@ -60,10 +54,12 @@ func readItem(scan *bufio.Scanner) Item {
 	item.Id, _ = strconv.Atoi(ss[0])
 	rawTask, _ := strconv.Atoi(ss[1])
 	item.Length = TaskLength(rawTask)
-	rawDue, _ := strconv.ParseInt(ss[2], 10, 64)
+	item.Priority, _ = strconv.Atoi(ss[2])
+	rawDue, _ := strconv.ParseInt(ss[3], 10, 64)
 	item.Due = time.Unix(rawDue, 0)
-	rawStart, _ := strconv.ParseInt(ss[3], 10, 64)
+	rawStart, _ := strconv.ParseInt(ss[4], 10, 64)
 	item.Start = time.Unix(rawStart, 0)
+	item.Finished = ss[5] == "1"
 
 	// Read in line 2
 	scan.Scan()
@@ -75,7 +71,7 @@ func readItem(scan *bufio.Scanner) Item {
 }
 
 // Save data to file
-func save(todos *[]Item, finished *[]Item) {
+func save(todos *[]Item) {
 	// Instantiate the stringbuilder
 	sb := strings.Builder{}
 
@@ -83,17 +79,12 @@ func save(todos *[]Item, finished *[]Item) {
 	sb.WriteString(Version)
 	sb.WriteString("\n")
 
-	// Save lengths of the arrays
+	// Save the length of the todos array
 	sb.WriteString(strconv.Itoa(len(*todos)))
-	sb.WriteString(" ")
-	sb.WriteString(strconv.Itoa(len(*finished)))
 	sb.WriteString("\n")
 
-	// Iterate through the todos and finished arrays and write all the data
+	// Iterate through the todos array and write all the data
 	for _, item := range *todos {
-		writeItem(item, &sb)
-	}
-	for _, item := range *finished {
 		writeItem(item, &sb)
 	}
 
@@ -112,7 +103,16 @@ func writeItem(item Item, sb *strings.Builder) {
 	(*sb).WriteString(strconv.FormatInt(item.Due.Unix(), 10))
 	(*sb).WriteString(" ")
 	(*sb).WriteString(strconv.FormatInt(item.Start.Unix(), 10))
+	(*sb).WriteString(" ")
+	(*sb).WriteString(boolToString(item.Finished))
 	(*sb).WriteString("\n")
 	(*sb).WriteString(item.Name)
 	(*sb).WriteString("\n")
+}
+
+func boolToString(in bool) string {
+	if in {
+		return "1"
+	}
+	return "0"
 }
