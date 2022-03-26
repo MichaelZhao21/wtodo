@@ -11,7 +11,7 @@ import (
 )
 
 // Load data from file
-func load(todos *[]Item) {
+func load(todos *[]Item, nextId *int) {
 	// Open data file
 	f, err := os.OpenFile("wtodo.dat", os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
@@ -32,10 +32,13 @@ func load(todos *[]Item) {
 		return
 	}
 
-	// Scan the scond line and split it
-	// to get the length of 2 arrays
+	// Scan the scond line and split it to get the
+	// length of the array and next id
 	scan.Scan()
-	todosLen, _ := strconv.Atoi(scan.Text())
+	s = scan.Text()
+	ss := strings.Split(s, " ")
+	todosLen, _ := strconv.Atoi(ss[0])
+	*nextId, _ = strconv.Atoi(ss[1])
 
 	// Iterate through both arrays and save all values
 	for i := 0; i < todosLen; i++ {
@@ -71,7 +74,7 @@ func readItem(scan *bufio.Scanner) Item {
 }
 
 // Save data to file
-func save(todos *[]Item) {
+func save(todos *[]Item, nextId *int) {
 	// Instantiate the stringbuilder
 	sb := strings.Builder{}
 
@@ -79,8 +82,10 @@ func save(todos *[]Item) {
 	sb.WriteString(Version)
 	sb.WriteString("\n")
 
-	// Save the length of the todos array
+	// Save the length of the todos array and the next ID on the next line
 	sb.WriteString(strconv.Itoa(len(*todos)))
+	sb.WriteString(" ")
+	sb.WriteString(strconv.Itoa(*nextId))
 	sb.WriteString("\n")
 
 	// Iterate through the todos array and write all the data
