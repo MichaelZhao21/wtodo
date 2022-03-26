@@ -12,13 +12,21 @@ import (
 	"time"
 )
 
+// Date mappings
+var dateFormats = map[int]string{
+	4:  "0102",
+	5:  ":0304",
+	8:  "01022006",
+	9:  "0102-0304",
+	13: "01022006-0304",
+}
+
 func list(todos []Item) {
 	fmt.Printf("list\n")
 }
 
 func editItem(todos *[]Item, nextId *int, add bool) {
 	usageInfo := "Usage: wtodo " + os.Args[1] + " <id> [tags]"
-	var err error
 	var temp Item
 	var index int
 
@@ -79,29 +87,13 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 		}
 	}
 
-	// Parse date based on the length of the input string
-	dateFormats := map[int]string{
-		4:  "0102",
-		5:  ":0304",
-		8:  "01022006",
-		9:  "0102-0304",
-		13: "01022006-0304",
-	}
-
+	// Parse dates based on the avaliable formats
 	if d != "" {
-		temp.Due, err = time.Parse(dateFormats[len(d)], d)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Invalid due date:", d, dateFormat)
-			os.Exit(1)
-		}
+		temp.Due = parseDatetime(d, dateFormat)
 	}
 
 	if s != "" {
-		temp.Start, err = time.Parse(dateFormats[len(s)], s)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Invalid start date:", s, dateFormat)
-			os.Exit(1)
-		}
+		temp.Start = parseDatetime(d, dateFormat)
 	}
 
 	// Edit name if tag enabled
@@ -187,6 +179,56 @@ func editName(oldName string) string {
 	line := strings.Split(string(content), "\n")[0]
 	return line
 }
+
+// Helpfer function to parse dates
+func parseDatetime(d string, dateFormat string) time.Time {
+	// Set defaults
+	now := time.Now()
+	year := now.Year()
+	month := now.Month()
+	day := now.Day()
+	hour := 11
+	minute := 59
+
+	// Parse time form input string
+	parsed, err := time.Parse(dateFormats[len(d)], d)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Invalid due date:", d, dateFormat)
+		os.Exit(1)
+	}
+
+	// Modify defaults based on input string
+	switch len(d) {
+	case 8: // MMDDYYYY
+		year = parsed.Year()
+		month = parsed.Month()
+		day = parsed.Day()
+	case 5: // :HHmm
+		hour = parsed.Hour()
+		minute = parsed.Minute()
+	case 13: // MMDDYYYY-HHmm
+		year = parsed.Year()
+		fallthrough
+	case 9: // MMDD-HHmm
+		hour = parsed.Hour()
+		minute = parsed.Minute()
+		fallthrough
+	case 4:
+		month = parsed.Month()
+		day = parsed.Day()
+	}
+
+	// Return newly created date
+	return time.Date(year, month, day, hour, minute, 0, 0, time.Local)
+}
+
+// var dateFormats = map[int]string{
+// 	4:  "0102",
+// 	5:  ":0304",
+// 	8:  "01022006",
+// 	9:  "0102-0304",
+// 	13: "01022006-0304",
+// }
 
 func finishItem(todos *[]Item) {
 

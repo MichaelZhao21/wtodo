@@ -10,6 +10,20 @@ import (
 	"time"
 )
 
+/*
+DATA FILE FORMAT:
+
+======= | Header | =======
+<version>
+<length of todos> <nextId>
+==========================
+
+==================== | For each todo Item | ====================
+<id> <length> <priority> <due date> <start date> <finished bool>
+<name>
+================================================================
+*/
+
 // Load data from file
 func load(todos *[]Item, nextId *int) {
 	// Open data file
