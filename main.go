@@ -43,7 +43,7 @@ func main() {
 
 	// Case where there are no command line arguments
 	if len(os.Args[1:]) < 1 {
-		list(todos)
+		list(todos, nextId)
 		return
 	}
 
