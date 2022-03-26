@@ -101,6 +101,7 @@ func filterItems(todos []Item) (notDone []Item, done []Item) {
 // Filter items by how far they are from due and sort them
 func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later []Item) {
 	now := time.Now()
+	var never []Item
 
 	// Sort based on due date
 	sort.Slice(todos, func(p, q int) bool {
@@ -111,7 +112,9 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 	todayEnd := time.Date(now.Year(), now.Month(), now.Day()+1, now.Hour(), now.Minute(), 1, 0, time.Local)
 	soonEnd := time.Date(now.Year(), now.Month(), now.Day()+7, now.Hour(), now.Minute(), 1, 0, time.Local)
 	for _, t := range todos {
-		if t.Due.Before(now) {
+		if t.Due.IsZero() {
+			never = append(never, t)
+		} else if t.Due.Before(now) {
 			late = append(late, t)
 		} else if t.Due.Before(todayEnd) {
 			today = append(today, t)
@@ -122,6 +125,12 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 		}
 	}
 
+	// Sort never due items by ID and concat onto the end of later
+	sort.Slice(todos, func(p, q int) bool {
+		return todos[p].Id < todos[q].Id
+	})
+	later = append(later, never...)
+
 	// Return todos
 	return late, today, soon, later
 }
@@ -130,6 +139,7 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 // Severity = 0 - red bold, 1 - red, 2 - yellow, 3 - green
 func printItem(t Item, severity int, idWidth string) {
 	due := t.Due.Format("Mon 1/2/06 3:04pm")
+	dueWidth := "21"
 	var dateCol string
 	switch severity {
 	case 0:
@@ -139,10 +149,14 @@ func printItem(t Item, severity int, idWidth string) {
 	case 2:
 		dateCol = YELLOW_C
 	default:
+		if t.Due.IsZero() {
+			dueWidth = "0"
+			due = ""
+		}
 		dateCol = GREEN_C
 	}
 
-	format := "  %s%" + idWidth + "d. %s%s%-20s%s %s%s\n"
+	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s%s%s%s\n"
 	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, WHITE_C, t.Name, RESET_C)
 }
 
@@ -164,8 +178,8 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 	var p int
 	var l, d, s, name string
 	var n bool
-	dateFormatSimple := "MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm"
-	dateFormat := "Formats: MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm ([M]onth, [D]ate, [Y]ear, [H]our, [m]inute) | Defaults: Today at 11:59pm"
+	dateFormatSimple := "MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0"
+	dateFormat := "Formats: MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0 ([M]onth, [D]ate, [Y]ear, [H]our, [m]inute, 0=none) | Defaults: Today at 11:59pm"
 	editFlags := flag.NewFlagSet("edit", flag.ExitOnError)
 	editFlags.IntVar(&p, "p", -1, "Priority of the todo item | 1 - high, 2 - normal (default), 3 - low")
 	editFlags.StringVar(&l, "l", "", "How long the task will take | [l]ong, [m]edium, [s]hort (default)")
@@ -318,7 +332,7 @@ func parseLength(l string) TaskLength {
 // Helper function to parse dates
 func parseDatetime(d string, dateFormat string) time.Time {
 	// Return zero time if string empty
-	if d == "" {
+	if d == "" || d == "0" {
 		return time.Time{}
 	}
 
