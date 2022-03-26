@@ -16,10 +16,10 @@ import (
 // Date mappings
 var dateFormats = map[int]string{
 	4:  "0102",
-	5:  ":0304",
+	5:  ":1504",
 	8:  "01022006",
-	9:  "0102-0304",
-	13: "01022006-0304",
+	9:  "0102-1504",
+	13: "01022006-1504",
 }
 
 // Color mappings
@@ -33,6 +33,7 @@ const CYAN_C = "\033[36m"
 const GREY_C = "\033[37m"
 const WHITE_C = "\033[1;37m"
 const DARK_GREY_C = "\033[1;30m"
+const LIGHT_RED_C = "\033[1;31m"
 const LIGHT_GREEN_C = "\033[1;32m"
 const LIGHT_YELLOW_C = "\033[1;33m"
 
@@ -51,25 +52,32 @@ func list(todos []Item) {
 	}
 
 	// Filter each section by how far it is from due (<1 day, <1 week, other)
-	today, soon, later := dateSortItems(notDone)
+	late, today, soon, later := dateSortItems(notDone)
 
-	// Print out all 3 sections
+	// Print out all 4 sections
+	if len(late) > 0 {
+		fmt.Printf("%sOVERDUE%s\n", GREY_C, RESET_C)
+		for _, t := range late {
+			printItem(t, 0)
+		}
+	}
+
 	if len(today) > 0 {
-		fmt.Printf("%sDO TODAY%s\n\n", LIGHT_YELLOW_C, RESET_C)
+		fmt.Printf("\n%sDO TODAY%s\n", GREY_C, RESET_C)
 		for _, t := range today {
 			printItem(t, 1)
 		}
 	}
 
 	if len(soon) > 0 {
-		fmt.Printf("\n%sDO SOON%s\n\n", LIGHT_YELLOW_C, RESET_C)
+		fmt.Printf("\n%sDO SOON%s\n", GREY_C, RESET_C)
 		for _, t := range soon {
 			printItem(t, 2)
 		}
 	}
 
 	if len(later) > 0 {
-		fmt.Printf("\n%sDO LATER (>1 week)%s\n\n", LIGHT_YELLOW_C, RESET_C)
+		fmt.Printf("\n%sDO LATER (>1 week)%s\n", GREY_C, RESET_C)
 		for _, t := range later {
 			printItem(t, 3)
 		}
@@ -89,7 +97,7 @@ func filterItems(todos []Item) (notDone []Item, done []Item) {
 }
 
 // Filter items by how far they are from due and sort them
-func dateSortItems(todos []Item) (today []Item, soon []Item, later []Item) {
+func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later []Item) {
 	now := time.Now()
 
 	// Sort based on due date
@@ -101,7 +109,9 @@ func dateSortItems(todos []Item) (today []Item, soon []Item, later []Item) {
 	todayEnd := time.Date(now.Year(), now.Month(), now.Day()+1, now.Hour(), now.Minute(), 1, 0, time.Local)
 	soonEnd := time.Date(now.Year(), now.Month(), now.Day()+7, now.Hour(), now.Minute(), 1, 0, time.Local)
 	for _, t := range todos {
-		if t.Due.Before(todayEnd) {
+		if t.Due.Before(now) {
+			late = append(late, t)
+		} else if t.Due.Before(todayEnd) {
 			today = append(today, t)
 		} else if t.Due.Before(soonEnd) {
 			soon = append(soon, t)
@@ -111,21 +121,26 @@ func dateSortItems(todos []Item) (today []Item, soon []Item, later []Item) {
 	}
 
 	// Return todos
-	return today, soon, later
+	return late, today, soon, later
 }
 
 // Helper function to display one todo item
-// Severity = 1 - red, 2 - yellow, 3 - green
+// Severity = 0 - red bold, 1 - red, 2 - yellow, 3 - green
 func printItem(t Item, severity int) {
 	due := t.Due.Format("Mon 1/2/06 3:04pm")
-	dateCol := GREEN_C
-	if severity == 1 {
+	var dateCol string
+	switch severity {
+	case 0:
+		dateCol = LIGHT_RED_C
+	case 1:
 		dateCol = RED_C
-	} else if severity == 2 {
+	case 2:
 		dateCol = YELLOW_C
+	default:
+		dateCol = GREEN_C
 	}
 
-	fmt.Printf("  %s%d. %s%s%s%s %s%s\n", DARK_GREY_C, t.Id, RESET_C, dateCol, due, WHITE_C, t.Name, RESET_C)
+	fmt.Printf("  %s%d. %s%s%-20s%s %s%s\n", DARK_GREY_C, t.Id, RESET_C, dateCol, due, WHITE_C, t.Name, RESET_C)
 }
 
 func editItem(todos *[]Item, nextId *int, add bool) {
