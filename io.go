@@ -26,8 +26,16 @@ DATA FILE FORMAT:
 
 // Load data from file
 func load(todos *[]Item, nextId *int) {
+	// Get home file path and make data dir if not exists
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	path := dirname + "/.wtodo/wtodo.dat"
+	os.Mkdir(dirname+"/.wtodo", fs.FileMode(0755))
+
 	// Open data file
-	f, err := os.OpenFile("wtodo.dat", os.O_RDONLY|os.O_CREATE, 0755)
+	f, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		log.Fatal(err)
 	}
