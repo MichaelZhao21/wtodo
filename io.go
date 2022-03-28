@@ -18,9 +18,10 @@ DATA FILE FORMAT:
 <length of todos> <nextId>
 ==========================
 
-==================== | For each todo Item | ====================
+=============== | For each todo Item (3 lines) | ===============
 <id> <length> <priority> <due date> <start date> <finished bool>
 <name>
+<comma seperated list of tags>
 ================================================================
 */
 
@@ -91,6 +92,13 @@ func readItem(scan *bufio.Scanner) Item {
 	s = scan.Text()
 	item.Name = s
 
+	// Read in line 3
+	scan.Scan()
+	s = scan.Text()
+	if s != "NULL" {
+		item.Tags = strings.Split(s, ",")
+	}
+
 	// Return the item
 	return item
 }
@@ -134,6 +142,12 @@ func writeItem(item Item, sb *strings.Builder) {
 	(*sb).WriteString(boolToString(item.Finished))
 	(*sb).WriteString("\n")
 	(*sb).WriteString(item.Name)
+	(*sb).WriteString("\n")
+	if len(item.Tags) > 0 {
+		(*sb).WriteString(strings.Join(item.Tags, ","))
+	} else {
+		(*sb).WriteString("NULL")
+	}
 	(*sb).WriteString("\n")
 }
 

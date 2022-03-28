@@ -7,30 +7,6 @@ import (
 	"time"
 )
 
-// Date mappings
-var dateFormats = map[int]string{
-	4:  "0102",
-	5:  ":1504",
-	8:  "01022006",
-	9:  "0102-1504",
-	13: "01022006-1504",
-}
-
-// Color mappings
-const RESET_C = "\033[0m"
-const RED_C = "\033[31m"
-const GREEN_C = "\033[32m"
-const YELLOW_C = "\033[33m"
-const BLUE_C = "\033[34m"
-const PURPLE_C = "\033[35m"
-const CYAN_C = "\033[36m"
-const GREY_C = "\033[37m"
-const WHITE_C = "\033[1;37m"
-const DARK_GREY_C = "\033[1;30m"
-const LIGHT_RED_C = "\033[1;31m"
-const LIGHT_GREEN_C = "\033[1;32m"
-const LIGHT_YELLOW_C = "\033[1;33m"
-
 // Function to list all items
 func list(todos []Item, nextId int) {
 	// Filter list by done and not done

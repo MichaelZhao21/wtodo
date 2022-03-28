@@ -30,7 +30,7 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 
 	// Get flags for edit command
 	var p int
-	var l, d, s, name string
+	var l, d, s, name, t string
 	var n bool
 	dateFormatSimple := "MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0"
 	dateFormat := "Formats: MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0 ([M]onth, [D]ate, [Y]ear, [H]our, [m]inute, 0=none) | Defaults: Today at 11:59pm"
@@ -44,6 +44,7 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 	} else {
 		editFlags.BoolVar(&n, "n", false, "Edit name, enable flag to use text editor to edit todo item name")
 	}
+	editFlags.StringVar(&t, "t", "", "Tags (Comma-seperated)")
 
 	// Parse flags if there are any
 	if !add {
@@ -82,6 +83,11 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 	// Edit name if tag enabled
 	if n {
 		temp.Name = editName(temp.Name)
+	}
+
+	// Edit tags if valid and not empty
+	if t != "" {
+		temp.Tags = strings.Split(t, ",")
 	}
 
 	// Name field is required for adding a todo
