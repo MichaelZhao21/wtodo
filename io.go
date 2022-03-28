@@ -27,13 +27,7 @@ DATA FILE FORMAT:
 
 // Load data from file
 func load(todos *[]Item, nextId *int) {
-	// Get home file path and make data dir if not exists
-	dirname, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	path := dirname + "/.wtodo/wtodo.dat"
-	os.Mkdir(dirname+"/.wtodo", fs.FileMode(0755))
+	path := getDataPath()
 
 	// Open data file
 	f, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0755)
@@ -124,7 +118,7 @@ func save(todos *[]Item, nextId *int) {
 	}
 
 	// Write all the data to the file
-	os.WriteFile("wtodo.dat", []byte(sb.String()), fs.FileMode(os.O_TRUNC))
+	os.WriteFile(getDataPath(), []byte(sb.String()), fs.FileMode(os.O_TRUNC))
 }
 
 // Utility function to write a single Item
@@ -156,4 +150,16 @@ func boolToString(in bool) string {
 		return "1"
 	}
 	return "0"
+}
+
+// Helper function to get the path of the data file
+func getDataPath() string {
+	// Get home file path and make data dir if not exists
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	path := dirname + "/.wtodo/wtodo.dat"
+	os.Mkdir(dirname+"/.wtodo", fs.FileMode(0755))
+	return path
 }

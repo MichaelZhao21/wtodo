@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -109,7 +110,14 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 // Severity = 0 - red bold, 1 - red, 2 - yellow, 3 - green
 func printItem(t Item, severity int, idWidth string) {
 	due := t.Due.Format("Mon 1/2/06 3:04pm")
+	tags := strings.Join(t.Tags, ",")
+	name := t.Name
+	if len(name) > 30 {
+		name = name[:27] + "..."
+	}
+
 	dueWidth := "21"
+	nameWidth := "30"
 	var dateCol string
 	switch severity {
 	case 0:
@@ -121,11 +129,13 @@ func printItem(t Item, severity int, idWidth string) {
 	default:
 		if t.Due.IsZero() {
 			dueWidth = "0"
+			nameWidth = "50"
 			due = ""
 		}
 		dateCol = GREEN_C
 	}
 
-	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s%s%s%s\n"
-	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, WHITE_C, t.Name, RESET_C)
+	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s%s%-" + nameWidth + "s%s %s%s%s\n"
+	// println(format)
+	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, WHITE_C, name, RESET_C, GREY_C, tags, RESET_C)
 }
