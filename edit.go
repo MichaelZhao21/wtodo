@@ -34,7 +34,7 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 	var n bool
 	dateFormatSimple := "MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0"
 	dateFormat := "Formats: MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0 ([M]onth, [D]ate, [Y]ear, [H]our, [m]inute, 0=none) | Defaults: Today at 11:59pm"
-	editFlags := flag.NewFlagSet("edit", flag.ExitOnError)
+	editFlags := flag.NewFlagSet("add/edit", flag.ExitOnError)
 	editFlags.IntVar(&p, "p", -1, "Priority of the todo item | 1 - high, 2 - normal (default), 3 - low")
 	editFlags.StringVar(&l, "l", "", "How long the task will take | [l]ong, [m]edium, [s]hort (default)")
 	editFlags.StringVar(&d, "d", "", "Due date | "+dateFormat)
