@@ -2,12 +2,18 @@ package main
 
 import (
 	"bufio"
+	"database/sql"
+	"fmt"
 	"io/fs"
 	"log"
+	"math/rand"
 	"os"
+	"os/user"
 	"strconv"
 	"strings"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 /*
@@ -25,9 +31,28 @@ DATA FILE FORMAT:
 ================================================================
 */
 
+/*
+PREFERENCES FILE FORMAT:
+
+<version>
+<use database (0/1 - rest of fields required)> [db url] []
+
+*/
+
+// Generates a username if one is not already made
+func genUser(settings *Settings) {
+	if len(settings.username) == 0 {
+		rand.Seed(time.Now().UnixNano())
+		v := rand.Int()
+		user, _ := user.Current()
+		settings.username = fmt.Sprintf("%s-%d", user.Username, v)
+		fmt.Println(settings.username)
+	}
+}
+
 // Load data from file
-func load(todos *[]Item, nextId *int) {
-	path := getDataPath()
+func loadFile(todos *[]Item, nextId *int) {
+	path := getDataFilePath()
 
 	// Open data file
 	f, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0755)
@@ -59,11 +84,11 @@ func load(todos *[]Item, nextId *int) {
 
 	// Iterate through both arrays and save all values
 	for i := 0; i < todosLen; i++ {
-		*todos = append(*todos, readItem(scan))
+		*todos = append(*todos, readItemFile(scan))
 	}
 }
 
-func readItem(scan *bufio.Scanner) Item {
+func readItemFile(scan *bufio.Scanner) Item {
 	// Create empty struct
 	item := Item{}
 
@@ -98,7 +123,7 @@ func readItem(scan *bufio.Scanner) Item {
 }
 
 // Save data to file
-func save(todos *[]Item, nextId *int) {
+func saveFile(todos *[]Item, nextId *int) {
 	// Instantiate the stringbuilder
 	sb := strings.Builder{}
 
@@ -114,15 +139,15 @@ func save(todos *[]Item, nextId *int) {
 
 	// Iterate through the todos array and write all the data
 	for _, item := range *todos {
-		writeItem(item, &sb)
+		writeItemFile(item, &sb)
 	}
 
 	// Write all the data to the file
-	os.WriteFile(getDataPath(), []byte(sb.String()), fs.FileMode(os.O_TRUNC))
+	os.WriteFile(getDataFilePath(), []byte(sb.String()), fs.FileMode(os.O_TRUNC))
 }
 
 // Utility function to write a single Item
-func writeItem(item Item, sb *strings.Builder) {
+func writeItemFile(item Item, sb *strings.Builder) {
 	(*sb).WriteString(strconv.Itoa(item.Id))
 	(*sb).WriteString(" ")
 	(*sb).WriteString(strconv.Itoa(int(item.Length)))
@@ -145,6 +170,30 @@ func writeItem(item Item, sb *strings.Builder) {
 	(*sb).WriteString("\n")
 }
 
+// Loads the preferences from the user
+func loadPrefs(settings *Settings) {
+
+}
+
+// Connects to database using the info stored in settings
+func connectDb(settings Settings) *sql.DB {
+	// Connect to the database
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=wtodo sslmode=disable", settings.dbHost, settings.dbPort, settings.dbUser, settings.dbPass)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal("Could not open DB: ", err)
+	}
+
+	// Create tables if not created
+	db.Exec("CREATE TABLE IF NOT EXISTS Item (id integer PRIMARY KEY, name varchar(100) NOT NULL, due timestamp with time zone, start timestamp with time zone, length smallint, priority smallint, finished boolean)")
+	db.Exec("CREATE TABLE IF NOT EXISTS Tag (item_id integer PRIMARY KEY, name varchar(50))")
+	return db
+}
+
+func loadDb(todos *[]Item, settings Settings) {
+
+}
+
 func boolToString(in bool) string {
 	if in {
 		return "1"
@@ -153,7 +202,7 @@ func boolToString(in bool) string {
 }
 
 // Helper function to get the path of the data file
-func getDataPath() string {
+func getDataFilePath() string {
 	// Get home file path and make data dir if not exists
 	dirname, err := os.UserHomeDir()
 	if err != nil {

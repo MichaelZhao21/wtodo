@@ -54,17 +54,37 @@ type Item struct {
 	Tags     []string
 }
 
+type Settings struct {
+	UseDb    bool
+	dbHost   string
+	dbPort   int
+	dbUser   string
+	dbPass   string
+	dbName   string
+	username string
+}
+
 // Command: wtodo <action> [tags] <text>
 func main() {
 	// Define list and main id incrementer
 	var todos []Item
 	var nextId int
+	var settings Settings
 
-	// TEST CASES
-	// todos = append(todos, Item{0, "This is the name of the todo", time.Now(), time.Time{}, ShortTask, 2, false})
+	// Load preferences from file
+	loadPrefs(&settings)
 
-	// Load data from file
-	load(&todos, &nextId)
+	// If first time using system, generate a username
+	genUser(&settings)
+
+	// Load data from file or database
+	if settings.UseDb {
+		db := connectDb(settings)
+		defer db.Close()
+		loadDb(&todos, settings)
+	} else {
+		loadFile(&todos, &nextId)
+	}
 
 	// Case where there are no command line arguments
 	if len(os.Args[1:]) < 1 {
@@ -88,6 +108,6 @@ func main() {
 	}
 
 	// Save data and exit
-	save(&todos, &nextId)
+	saveFile(&todos, &nextId)
 	os.Exit(0)
 }
