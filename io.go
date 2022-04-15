@@ -79,6 +79,7 @@ func loadPrefs(settings *Settings) {
 	settings.DbPort, _ = strconv.Atoi(ss[1])
 	settings.DbUser = ss[2]
 	settings.DbPass = ss[3]
+	settings.DbName = ss[4]
 }
 
 // Saves the preferences for the user
@@ -105,6 +106,8 @@ func savePrefs(settings *Settings) {
 		sb.WriteString(settings.DbUser)
 		sb.WriteString(" ")
 		sb.WriteString(settings.DbPass)
+		sb.WriteString(" ")
+		sb.WriteString(settings.DbName)
 	}
 
 	// Write all the data to the file

@@ -21,7 +21,7 @@ func list(todos []Item, nextId int, useDb bool, db *sql.DB) {
 
 	// Print header
 	currDate := time.Now().Format("Monday January 2, 2006 (1/2/06) 3:04pm")
-	fmt.Printf("%s===== %s%s%d Items To Do %s| %s%s%s%s =====%s\n", WHITE_C, RESET_C, CYAN_C, len(notDone), WHITE_C, RESET_C, YELLOW_C, currDate, WHITE_C, RESET_C)
+	fmt.Printf("%s⬤ %s%s%d Items To Do %s❚ %s%s%s%s ⬤%s\n", WHITE_C, RESET_C, TITLE0_C, len(notDone), WHITE_C, RESET_C, TITLE1_C, currDate, WHITE_C, RESET_C)
 
 	// If no items, print message and exit
 	if len(notDone) == 0 {
@@ -37,30 +37,31 @@ func list(todos []Item, nextId int, useDb bool, db *sql.DB) {
 	if len(late) > 0 {
 		fmt.Printf("%sOVERDUE%s\n", GREY_C, RESET_C)
 		for _, t := range late {
-			printItem(t, 0, idWidth)
+			printListItem(t, 0, idWidth)
 		}
 	}
 
 	if len(today) > 0 {
 		fmt.Printf("\n%sDO TODAY%s\n", GREY_C, RESET_C)
 		for _, t := range today {
-			printItem(t, 1, idWidth)
+			printListItem(t, 1, idWidth)
 		}
 	}
 
 	if len(soon) > 0 {
 		fmt.Printf("\n%sDO SOON%s\n", GREY_C, RESET_C)
 		for _, t := range soon {
-			printItem(t, 2, idWidth)
+			printListItem(t, 2, idWidth)
 		}
 	}
 
 	if len(later) > 0 {
 		fmt.Printf("\n%sDO LATER (>1 week)%s\n", GREY_C, RESET_C)
 		for _, t := range later {
-			printItem(t, 3, idWidth)
+			printListItem(t, 3, idWidth)
 		}
 	}
+	println()
 }
 
 // Helper function to filter todos
@@ -102,10 +103,15 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 		}
 	}
 
-	// Sort never due items by ID and concat onto the end of later
+	// Sort never due items by priority, then ID
 	sort.Slice(todos, func(p, q int) bool {
-		return todos[p].Id < todos[q].Id
+		if todos[p].Priority == todos[q].Priority {
+			return todos[p].Id < todos[q].Id
+		}
+		return todos[p].Priority < todos[q].Priority
 	})
+
+	// Concat never to end of later list
 	later = append(later, never...)
 
 	// Return todos
@@ -114,34 +120,60 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 
 // Helper function to display one todo item
 // Severity = 0 - red bold, 1 - red, 2 - yellow, 3 - green
-func printItem(t Item, severity int, idWidth string) {
-	due := t.Due.Format("Mon 1/2/06 3:04pm")
-	tags := strings.Join(t.Tags, ",")
-	name := t.Name
-	if len(name) > 30 {
-		name = name[:27] + "..."
-	}
-
+func printListItem(t Item, severity int, idWidth string) {
 	dueWidth := "21"
 	nameWidth := "30"
-	var dateCol string
+	var dateCol, priorityCol, length, due string
+
+	// Date color
 	switch severity {
 	case 0:
-		dateCol = LIGHT_RED_C
+		dateCol = DATE0_C
 	case 1:
-		dateCol = RED_C
+		dateCol = DATE1_C
 	case 2:
-		dateCol = YELLOW_C
+		dateCol = DATE2_C
 	default:
 		if t.Due.IsZero() {
 			dueWidth = "0"
 			nameWidth = "50"
 			due = ""
 		}
-		dateCol = GREEN_C
+		dateCol = DATE3_C
 	}
 
-	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s%s%-" + nameWidth + "s%s %s%s%s\n"
-	// println(format)
-	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, WHITE_C, name, RESET_C, GREY_C, tags, RESET_C)
+	// Length calculation
+	switch t.Length {
+	case LongTask:
+		length = "L"
+	case MediumTask:
+		length = "M"
+	default:
+		length = "S"
+	}
+
+	// Priority color
+	switch t.Priority {
+	case 1:
+		priorityCol = RATE0_C
+	case 2:
+		priorityCol = RATE1_C
+	default:
+		priorityCol = RATE2_C
+	}
+
+	// Calculate all other values
+	due = t.Due.Format("Mon 1/2/06 3:04pm")
+	tags := strings.Join(t.Tags, ",")
+	name := t.Name
+	if len(name) > 50 {
+		name = fmt.Sprintf("%s... (%s)", name[:47], length)
+	} else {
+		name = fmt.Sprintf("%s (%s)", name, length)
+	}
+	priority := strings.Repeat("★", 4-t.Priority)
+
+	// Format and print
+	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s %s%-3s %s%s%-" + nameWidth + "s%s %s%s%s\n"
+	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, priorityCol, priority, RESET_C, WHITE_C, name, RESET_C, GREY_C, tags, RESET_C)
 }

@@ -26,20 +26,22 @@ var dateFormats = map[int]string{
 // Color mappings
 const RESET_C = "\033[0m"
 const RED_C = "\033[31m"
-const GREEN_C = "\033[32m"
-const YELLOW_C = "\033[33m"
-const BLUE_C = "\033[34m"
-const PURPLE_C = "\033[35m"
-const CYAN_C = "\033[36m"
+const YELLOW_C = "\033[33m" // More gold-like
+const CYAN_C = "\033[36m"   // Really bright blue
 const GREY_C = "\033[37m"
 const WHITE_C = "\033[1;37m"
 const DARK_GREY_C = "\033[1;30m"
 const LIGHT_RED_C = "\033[1;31m"
 const LIGHT_GREEN_C = "\033[1;32m"
-const LIGHT_YELLOW_C = "\033[1;33m"
-const ORANGE_C = "\033[38;5;201m"
-
-// 218
+const TITLE0_C = "\033[38;5;225m"
+const TITLE1_C = "\033[38;5;159m"
+const DATE0_C = "\033[38;5;124m"
+const DATE1_C = "\033[38;5;203m"
+const DATE2_C = "\033[38;5;222m"
+const DATE3_C = "\033[38;5;192m"
+const RATE0_C = "\033[38;5;157m"
+const RATE1_C = "\033[38;5;229m"
+const RATE2_C = "\033[38;5;215m"
 
 type TaskLength int
 
@@ -66,6 +68,7 @@ type Settings struct {
 	DbPort   int
 	DbUser   string
 	DbPass   string
+	DbName   string
 	Username string
 }
 
@@ -101,6 +104,9 @@ func main() {
 	switch os.Args[1] {
 	case "setup", "s":
 		setup(&settings, true)
+		fallthrough
+	case "list", "l":
+		list(todos, nextId, settings.UseDb, db)
 	case "add", "insert", "a", "i":
 		editItem(&todos, &nextId, settings, db, true)
 	case "edit", "e":
@@ -110,13 +116,14 @@ func main() {
 	case "delete", "d":
 		deleteItem(&todos)
 	default:
-		fmt.Fprintln(os.Stderr, "Invalid Action:", os.Args[1], "\nUsage: wtodo <action> [options]")
-		os.Exit(1)
+		fmt.Printf("%sInvalid Action: %s\n%sUsage: wtodo <action> [options]\n", LIGHT_RED_C, os.Args[1], RESET_C)
+		os.Exit(0)
 	}
 
-	// Save data and exit
-	saveFile(&todos, &nextId)
-	os.Exit(0)
+	// Save data locally if no db and exit
+	if !settings.UseDb {
+		saveFile(&todos, &nextId)
+	}
 }
 
 // Generates a username if one is not already made
@@ -129,7 +136,6 @@ func setup(settings *Settings, dbSetup bool) {
 		v := rand.Int()
 		user, _ := user.Current()
 		settings.Username = fmt.Sprintf("%s-%d", user.Username, v)
-		fmt.Println(settings.Username)
 		dbSetup = true
 	}
 
@@ -148,12 +154,10 @@ func setup(settings *Settings, dbSetup bool) {
 
 			// Create tables if not created
 			createTables(db)
-
-			// Show user data if setup
-			list(nil, 0, settings.UseDb, db)
 		}
 	}
 
+	// Save preferences if changed
 	if noUser || dbSetup {
 		savePrefs(settings)
 	}

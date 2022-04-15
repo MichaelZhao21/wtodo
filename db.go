@@ -20,6 +20,7 @@ func getDbInfo(settings *Settings) {
 	settings.DbUser = ""
 	settings.DbPass = ""
 	settings.UseDb = false
+	settings.DbName = ""
 
 	// Create buffer reader
 	read := bufio.NewReader(os.Stdin)
@@ -35,7 +36,7 @@ func getDbInfo(settings *Settings) {
 	}
 
 	// Prompt for the rest of the inforamtion for the database
-	fmt.Printf("%s\nDatabase Setup\n==============\n%s%sMake sure you have created a database named \"wtodo\" as we will connect to that database!\n%s", WHITE_C, RESET_C, LIGHT_GREEN_C, RESET_C)
+	fmt.Printf("%s\nDatabase Setup\n==============\n%s", LIGHT_GREEN_C, RESET_C)
 	for settings.DbHost == "" {
 		fmt.Printf("%s> Enter Database Host:%s ", YELLOW_C, RESET_C)
 		name, _ := read.ReadString('\n')
@@ -61,13 +62,20 @@ func getDbInfo(settings *Settings) {
 		name, _ := read.ReadString('\n')
 		settings.DbPass = strings.Trim(name, " \n")
 	}
-	fmt.Printf("%s\nSetup complete!%s\n===============\nHost: %s\nPort: %d\nUsername: %s\nPassword: %s\n\n", WHITE_C, RESET_C, settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPass)
+
+	for settings.DbName == "" {
+		fmt.Printf("%s> Enter Database Name:%s ", YELLOW_C, RESET_C)
+		name, _ := read.ReadString('\n')
+		settings.DbName = strings.Trim(name, " \n")
+	}
+
+	fmt.Printf("%s\nSetup complete!%s\n===============\nHost: %s\nPort: %d\nUsername: %s\nPassword: %s\nDB Name: %s\n\n", WHITE_C, RESET_C, settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPass, settings.DbName)
 }
 
 // Connects to database using the info stored in settings
 func connectDb(settings Settings) *sql.DB {
 	// Connect to the database
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=wtodo sslmode=disable", settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPass)
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPass, settings.DbName)
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal("Could not open DB: ", err)
