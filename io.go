@@ -2,16 +2,12 @@ package main
 
 import (
 	"bufio"
-	"database/sql"
-	"fmt"
 	"io/fs"
 	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	_ "github.com/lib/pq"
 )
 
 /*
@@ -113,22 +109,6 @@ func savePrefs(settings *Settings) {
 
 	// Write all the data to the file
 	os.WriteFile(getDataFilePath(true), []byte(sb.String()), fs.FileMode(os.O_TRUNC))
-}
-
-// Connects to database using the info stored in settings
-func connectDb(settings Settings) *sql.DB {
-	// Connect to the database
-	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=wtodo sslmode=disable", settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPass)
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal("Could not open DB: ", err)
-	}
-	return db
-}
-
-// Load content from database
-func loadDb(todos *[]Item, settings Settings) {
-
 }
 
 // Load data from file

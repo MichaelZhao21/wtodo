@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"database/sql"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -14,18 +15,17 @@ import (
 )
 
 // Function to edit and add items
-func editItem(todos *[]Item, nextId *int, add bool) {
+func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add bool) {
 	usageInfo := "Usage: wtodo " + os.Args[1] + " <id> [tags]"
-	var temp Item
-	var index int
+	temp := Item{}
+	index := 0
 
 	// Maintain different usage info and store into new object if adding an item
-	// Otherwise, store the old object to edit in the temp variable
+	// Otherwise, store the old object to edit in the temp variable if not using a database
 	if add {
 		usageInfo = "Usage: wtodo " + os.Args[1] + "[tags]"
 	} else {
-		index = findItem(todos, usageInfo)
-		temp = (*todos)[index]
+		index, temp = findItem(todos, usageInfo, settings.UseDb, db)
 	}
 
 	// Get flags for edit command
@@ -100,6 +100,16 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 		}
 	}
 
+	// If it's a database, add to database instead of appending to the list
+	if settings.UseDb {
+		if add {
+			insertItem(db, temp)
+		} else {
+			updateItem(db, temp)
+		}
+		return
+	}
+
 	// If this is a new item, append it to the array and return
 	// Otherwise replace the current item with the newly edited one
 	if add {
@@ -112,7 +122,7 @@ func editItem(todos *[]Item, nextId *int, add bool) {
 }
 
 // Helper function to find an existing ID in the array
-func findItem(todos *[]Item, usageInfo string) int {
+func findItem(todos *[]Item, usageInfo string, useDb bool, db *sql.DB) (int, Item) {
 	// If it is an edit, find the item id and replace it
 	// Check for the ID command line argument
 	if len(os.Args) < 3 {
@@ -120,18 +130,24 @@ func findItem(todos *[]Item, usageInfo string) int {
 		os.Exit(1)
 	}
 
+	// If using a database
+	if useDb {
+		key, _ := strconv.Atoi(os.Args[2])
+		item := selectItem(db, key)
+		return item.Id, item
+	}
+
 	// Find the element to edit
 	key, _ := strconv.Atoi(os.Args[2])
 	for i := range *todos {
 		if (*todos)[i].Id == key {
-			return i
+			return i, (*todos)[i]
 		}
 	}
 
 	// Error if not found
-	fmt.Fprintln(os.Stderr, "ID not found:", os.Args[2], "\n", usageInfo)
-	os.Exit(1)
-	return -1
+	log.Fatalln("ID not found:", os.Args[2], "\n", usageInfo)
+	return 0, Item{}
 }
 
 // Helper function to edit the name of an Item using the default text editor

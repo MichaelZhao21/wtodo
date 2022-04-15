@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -9,7 +10,12 @@ import (
 )
 
 // Function to list all items
-func list(todos []Item, nextId int) {
+func list(todos []Item, nextId int, useDb bool, db *sql.DB) {
+	// Replace todos with database info if using database
+	if useDb {
+		todos = selectAll(db)
+	}
+
 	// Filter list by done and not done
 	notDone, _ := filterItems(todos)
 

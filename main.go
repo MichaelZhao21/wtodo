@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
+	"database/sql"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/user"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -39,6 +37,9 @@ const DARK_GREY_C = "\033[1;30m"
 const LIGHT_RED_C = "\033[1;31m"
 const LIGHT_GREEN_C = "\033[1;32m"
 const LIGHT_YELLOW_C = "\033[1;33m"
+const ORANGE_C = "\033[38;5;201m"
+
+// 218
 
 type TaskLength int
 
@@ -74,6 +75,7 @@ func main() {
 	var todos []Item
 	var nextId int
 	var settings Settings
+	var db *sql.DB
 
 	// Load preferences from file
 	loadPrefs(&settings)
@@ -83,25 +85,26 @@ func main() {
 
 	// Load data from file or database
 	if settings.UseDb {
-		db := connectDb(settings)
+		db = connectDb(settings)
 		defer db.Close()
-		loadDb(&todos, settings)
 	} else {
 		loadFile(&todos, &nextId)
 	}
 
 	// Case where there are no command line arguments
 	if len(os.Args[1:]) < 1 {
-		list(todos, nextId)
+		list(todos, nextId, settings.UseDb, db)
 		return
 	}
 
 	// Run commands based on the action statement
 	switch os.Args[1] {
+	case "setup", "s":
+		setup(&settings, true)
 	case "add", "insert", "a", "i":
-		editItem(&todos, &nextId, true)
+		editItem(&todos, &nextId, settings, db, true)
 	case "edit", "e":
-		editItem(&todos, &nextId, false)
+		editItem(&todos, &nextId, settings, db, false)
 	case "finish", "f":
 		finishItem(&todos)
 	case "delete", "d":
@@ -129,68 +132,29 @@ func setup(settings *Settings, dbSetup bool) {
 		fmt.Println(settings.Username)
 		dbSetup = true
 	}
+
 	// If no database, setup one
+	// Can also manually show this prompt
 	if dbSetup {
 		// Prompt user asking if they want to use a database
 		// and get the info for the database if yes
 		getDbInfo(settings)
 
-		// Connect to the database
-		db := connectDb(*settings)
-		defer db.Close()
+		// If using database, connect and create tables
+		if settings.UseDb {
+			// Connect to the database
+			db := connectDb(*settings)
+			defer db.Close()
 
-		// Create tables if not created
-		db.Exec("CREATE TABLE IF NOT EXISTS Item (id integer PRIMARY KEY, name varchar(100) NOT NULL, due timestamp with time zone, start timestamp with time zone, length smallint, priority smallint, finished boolean)")
-		db.Exec("CREATE TABLE IF NOT EXISTS Tag (item_id integer PRIMARY KEY, name varchar(50))")
+			// Create tables if not created
+			createTables(db)
+
+			// Show user data if setup
+			list(nil, 0, settings.UseDb, db)
+		}
 	}
 
 	if noUser || dbSetup {
 		savePrefs(settings)
 	}
-}
-
-func getDbInfo(settings *Settings) {
-	// Reset settings
-	settings.DbHost = ""
-	settings.DbPort = 0
-	settings.DbUser = ""
-	settings.DbPass = ""
-	settings.UseDb = false
-
-	// Create buffer reader
-	read := bufio.NewReader(os.Stdin)
-
-	// Ask the user if they want to use the database
-	fmt.Printf("%sUse Postgresql database? (y/n) [Default n - use local data file]:%s ", YELLOW_C, RESET_C)
-	useDb, _ := read.ReadString('\n')
-	settings.UseDb = strings.ToLower(strings.Trim(useDb, "\n")) == "y"
-
-	// If no database we done
-	if !settings.UseDb {
-		return
-	}
-
-	// Prompt for the rest of the inforamtion for the database
-	fmt.Printf("%s\nDatabase Setup\n==============\n%s%sMake sure you have created a database named \"wtodo\" as we will connect to that database!\n%s", WHITE_C, RESET_C, LIGHT_GREEN_C, RESET_C)
-	for settings.DbHost == "" {
-		fmt.Printf("%s> Enter Database Host:%s ", YELLOW_C, RESET_C)
-		name, _ := read.ReadString('\n')
-		settings.DbHost = strings.Trim(name, " \n")
-	}
-	for settings.DbPort == 0 {
-		fmt.Printf("%s> Enter Database Port:%s ", YELLOW_C, RESET_C)
-		name, _ := read.ReadString('\n')
-		settings.DbPort, _ = strconv.Atoi(strings.Trim(name, " \n"))
-	}
-	for settings.DbUser == "" {
-		fmt.Printf("%s> Enter Database Username:%s ", YELLOW_C, RESET_C)
-		name, _ := read.ReadString('\n')
-		settings.DbUser = strings.Trim(name, " \n")
-	}
-	for settings.DbPass == "" {
-		fmt.Printf("%s> Enter Database Password:%s ", YELLOW_C, RESET_C)
-		name, _ := read.ReadString('\n')
-		settings.DbPass = strings.Trim(name, " \n")
-	}
-	fmt.Printf("%s\nSetup complete!%s\n===============\nHost: %s\nPort: %d\nUsername: %s\nPassword: %s\n\n", WHITE_C, RESET_C, settings.DbHost, settings.DbPort, settings.DbUser, settings.DbPass)
 }
