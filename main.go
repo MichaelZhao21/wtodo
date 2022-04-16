@@ -86,6 +86,11 @@ func main() {
 	// If first time using system, generate a username
 	setup(&settings, false)
 
+	// If user wants to re-run the setup, do it before loading data
+	if len(os.Args[1:]) > 0 && (os.Args[1] == "s" || os.Args[1] == "setup") {
+		setup(&settings, true)
+	}
+
 	// Load data from file or database
 	if settings.UseDb {
 		db = connectDb(settings)
@@ -102,10 +107,7 @@ func main() {
 
 	// Run commands based on the action statement
 	switch os.Args[1] {
-	case "setup", "s":
-		setup(&settings, true)
-		fallthrough
-	case "list", "l":
+	case "list", "l", "setup", "s":
 		list(todos, nextId, settings.UseDb, db)
 	case "add", "insert", "a", "i":
 		editItem(&todos, &nextId, settings, db, true)
