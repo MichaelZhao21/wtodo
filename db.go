@@ -140,10 +140,26 @@ func insertItem(db *sql.DB, item Item) {
 
 // Update item from database
 func updateItem(db *sql.DB, item Item) {
-
+	_, err := db.Exec("UPDATE Item SET name=$1, due=$2, start=$3, length=$4, priority=$5, finished=$6 WHERE id=$7", item.Name, item.Due, item.Start, item.Length, item.Priority, item.Finished, item.Id)
+	if err != nil {
+		panic(err.Error())
+	}
 }
 
 // Select specific item from database
 func selectItem(db *sql.DB, key int) Item {
-	return Item{}
+	rows, err := db.Query("SELECT * FROM Item WHERE id=$1", key)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var temp Item
+	if rows.Next() {
+		err = rows.Scan(&temp.Id, &temp.Name, &temp.Due, &temp.Start, &temp.Length, &temp.Priority, &temp.Finished)
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	return temp
 }

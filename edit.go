@@ -17,8 +17,12 @@ import (
 // Function to edit and add items
 func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add bool) {
 	usageInfo := "Usage: wtodo " + os.Args[1] + " <id> [tags]"
-	temp := Item{}
 	index := 0
+
+	// Create and set default temp values
+	temp := Item{}
+	temp.Length = ShortTask
+	temp.Priority = 2
 
 	// Maintain different usage info and store into new object if adding an item
 	// Otherwise, store the old object to edit in the temp variable if not using a database
@@ -35,15 +39,12 @@ func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add boo
 	dateFormatSimple := "MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0"
 	dateFormat := "Formats: MMDDYYYY-HHmm, MMDD-HHmm, MMDDYYYY, MMDD, :HHmm, 0 ([M]onth, [D]ate, [Y]ear, [H]our, [m]inute, 0=none) | Defaults: Today at 11:59pm"
 	editFlags := flag.NewFlagSet("add/edit", flag.ExitOnError)
-	editFlags.IntVar(&p, "p", -1, "Priority of the todo item | 1 - high, 2 - normal (default), 3 - low")
+	editFlags.IntVar(&p, "p", -1, "Priority of the todo item | 3 - high, 2 - normal (default), 1 - low")
 	editFlags.StringVar(&l, "l", "", "How long the task will take | [l]ong, [m]edium, [s]hort (default)")
 	editFlags.StringVar(&d, "d", "", "Due date | "+dateFormat)
 	editFlags.StringVar(&s, "s", "", "Start date | "+dateFormat)
-	if add {
-		editFlags.StringVar(&name, "n", "", "Name of the todo item, REQUIRED")
-	} else {
-		editFlags.BoolVar(&n, "n", false, "Edit name, enable flag to use text editor to edit todo item name")
-	}
+	editFlags.BoolVar(&n, "en", false, "Edit name (only used if editing), enable flag to use text editor to edit todo item name")
+	editFlags.StringVar(&name, "n", "", "Name of the todo item, REQUIRED")
 	editFlags.StringVar(&t, "t", "", "Tags (Comma-seperated)")
 
 	// Parse flags if there are any
@@ -81,7 +82,7 @@ func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add boo
 	}
 
 	// Edit name if tag enabled
-	if n {
+	if !add && n {
 		temp.Name = editName(temp.Name)
 	}
 
@@ -91,11 +92,11 @@ func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add boo
 	}
 
 	// Name field is required for adding a todo
-	if add && len(os.Args) > 2 {
-		if name == "" {
+	if len(os.Args) > 2 {
+		if add && name == "" {
 			fmt.Fprintln(os.Stderr, "Name field (-n) is required!")
 			os.Exit(1)
-		} else {
+		} else if name != "" {
 			temp.Name = name
 		}
 	}

@@ -171,7 +171,7 @@ func printListItem(t Item, severity int, idWidth string) {
 	} else {
 		name = fmt.Sprintf("%s (%s)", name, length)
 	}
-	priority := strings.Repeat("★", 4-t.Priority)
+	priority := strings.Repeat("!", t.Priority)
 
 	// Format and print
 	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s %s%-3s %s%s%-" + nameWidth + "s%s %s%s%s\n"
