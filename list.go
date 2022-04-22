@@ -123,7 +123,8 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 func printListItem(t Item, severity int, idWidth string) {
 	dueWidth := "21"
 	nameWidth := "30"
-	var dateCol, priorityCol, length, due string
+	due := t.Due.Format("Mon 1/2/06 3:04pm")
+	var dateCol, priorityCol, length string
 
 	// Date color
 	switch severity {
@@ -163,7 +164,6 @@ func printListItem(t Item, severity int, idWidth string) {
 	}
 
 	// Calculate all other values
-	due = t.Due.Format("Mon 1/2/06 3:04pm")
 	tags := strings.Join(t.Tags, ",")
 	name := t.Name
 	if len(name) > 50 {
