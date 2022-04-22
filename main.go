@@ -110,11 +110,11 @@ func main() {
 	case "list", "l", "setup", "s":
 		list(todos, nextId, settings.UseDb, db)
 	case "add", "insert", "a", "i":
-		editItem(&todos, &nextId, settings, db, true)
+		editItem(&todos, &nextId, settings.UseDb, db, true)
 	case "edit", "e":
-		editItem(&todos, &nextId, settings, db, false)
+		editItem(&todos, &nextId, settings.UseDb, db, false)
 	case "finish", "f":
-		finishItem(&todos)
+		finishItem(&todos, settings.UseDb, db)
 	case "delete", "d":
 		deleteItem(&todos)
 	default:

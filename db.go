@@ -109,7 +109,7 @@ func selectAll(db *sql.DB) []Item {
 	americaTime := time.Now().Location()
 
 	// Perform select
-	q := `SELECT * FROM Item`
+	q := `SELECT * FROM Item WHERE finished=false`
 	rows, err := db.Query(q)
 	if err != nil {
 		log.Fatal("Error selecting all items:", err)
@@ -162,4 +162,12 @@ func selectItem(db *sql.DB, key int) Item {
 	}
 
 	return temp
+}
+
+// Update an item to be finished
+func updateFinishItem(db *sql.DB, id int) {
+	_, err := db.Exec("UPDATE Item SET finished=true WHERE id=$1", id)
+	if err != nil {
+		panic(err.Error())
+	}
 }

@@ -14,6 +14,15 @@ func list(todos []Item, nextId int, useDb bool, db *sql.DB) {
 	// Replace todos with database info if using database
 	if useDb {
 		todos = selectAll(db)
+	} else {
+		// If not using DB, filter out finished todos
+		filtered := []Item{}
+		for i := range todos {
+			if !todos[i].Finished {
+				filtered = append(filtered, todos[i])
+			}
+		}
+		todos = filtered
 	}
 
 	// Filter list by done and not done

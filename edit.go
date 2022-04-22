@@ -15,7 +15,7 @@ import (
 )
 
 // Function to edit and add items
-func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add bool) {
+func editItem(todos *[]Item, nextId *int, useDb bool, db *sql.DB, add bool) {
 	usageInfo := "Usage: wtodo " + os.Args[1] + " <id> [tags]"
 	index := 0
 
@@ -29,7 +29,7 @@ func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add boo
 	if add {
 		usageInfo = "Usage: wtodo " + os.Args[1] + "[tags]"
 	} else {
-		index, temp = findItem(todos, usageInfo, settings.UseDb, db)
+		index, temp = findItem(todos, usageInfo, useDb, db)
 	}
 
 	// Get flags for edit command
@@ -102,7 +102,7 @@ func editItem(todos *[]Item, nextId *int, settings Settings, db *sql.DB, add boo
 	}
 
 	// If it's a database, add to database instead of appending to the list
-	if settings.UseDb {
+	if useDb {
 		if add {
 			insertItem(db, temp)
 		} else {
