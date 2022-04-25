@@ -170,6 +170,6 @@ func printListItem(t Item, severity int) {
 	priority := strings.Repeat("!", t.Priority)
 
 	// Format and print
-	format := "%s%-7d. %s%s%-" + dueWidth + "s%s%-3s %s%s%-" + nameWidth + "s%s %s%s%s\n"
+	format := "%s%7d. %s%s%-" + dueWidth + "s%s%-3s %s%s%-" + nameWidth + "s%s %s%s%s\n"
 	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, priorityCol, priority, RESET_C, WHITE_C, name, RESET_C, GREY_C, tags, RESET_C)
 }
