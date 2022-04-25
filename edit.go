@@ -17,19 +17,20 @@ import (
 // Function to edit and add items
 func editItem(db *sql.DB, add bool) {
 	usageInfo := "Usage: wtodo " + os.Args[1] + " <id> [tags]"
-	var oldItem Item
 
 	// Create and set default temp values
 	temp := Item{}
-	temp.Length = ShortTask
-	temp.Priority = 2
+	if add {
+		temp.Length = ShortTask
+		temp.Priority = 2
+	}
 
 	// Maintain different usage info and store into new object if adding an item
 	// Otherwise, store the old object to edit in the temp variable if not using a database
 	if add {
 		usageInfo = "Usage: wtodo " + os.Args[1] + "[tags]"
 	} else {
-		oldItem = findItem(usageInfo, db)
+		temp = findItem(usageInfo, db)
 	}
 
 	// Get flags for edit command
@@ -83,7 +84,7 @@ func editItem(db *sql.DB, add bool) {
 
 	// Edit name if tag enabled
 	if !add && n {
-		temp.Name = editName(oldItem.Name)
+		temp.Name = editName(temp.Name)
 	}
 
 	// Edit tags if valid and not empty
