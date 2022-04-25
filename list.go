@@ -4,26 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 )
 
 // Function to list all items
-func list(todos []Item, nextId int, useDb bool, db *sql.DB) {
-	// Replace todos with database info if using database
-	if useDb {
-		todos = selectAll(db)
-	} else {
-		// If not using DB, filter out finished todos
-		filtered := []Item{}
-		for i := range todos {
-			if !todos[i].Finished {
-				filtered = append(filtered, todos[i])
-			}
-		}
-		todos = filtered
-	}
+func list(db *sql.DB) {
+	// Get all data from database
+	todos := selectAll(db)
 
 	// Filter list by done and not done
 	notDone, _ := filterItems(todos)
@@ -40,34 +28,33 @@ func list(todos []Item, nextId int, useDb bool, db *sql.DB) {
 
 	// Filter each section by how far it is from due (<1 day, <1 week, other)
 	late, today, soon, later := dateSortItems(notDone)
-	idWidth := strconv.Itoa(len(strconv.Itoa(nextId - 1)))
 
 	// Print out all 4 sections
 	if len(late) > 0 {
 		fmt.Printf("%sOVERDUE%s\n", GREY_C, RESET_C)
 		for _, t := range late {
-			printListItem(t, 0, idWidth)
+			printListItem(t, 0)
 		}
 	}
 
 	if len(today) > 0 {
 		fmt.Printf("\n%sDO TODAY%s\n", GREY_C, RESET_C)
 		for _, t := range today {
-			printListItem(t, 1, idWidth)
+			printListItem(t, 1)
 		}
 	}
 
 	if len(soon) > 0 {
 		fmt.Printf("\n%sDO SOON%s\n", GREY_C, RESET_C)
 		for _, t := range soon {
-			printListItem(t, 2, idWidth)
+			printListItem(t, 2)
 		}
 	}
 
 	if len(later) > 0 {
 		fmt.Printf("\n%sDO LATER (>1 week)%s\n", GREY_C, RESET_C)
 		for _, t := range later {
-			printListItem(t, 3, idWidth)
+			printListItem(t, 3)
 		}
 	}
 	println()
@@ -129,7 +116,7 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 
 // Helper function to display one todo item
 // Severity = 0 - red bold, 1 - red, 2 - yellow, 3 - green
-func printListItem(t Item, severity int, idWidth string) {
+func printListItem(t Item, severity int) {
 	dueWidth := "21"
 	nameWidth := "30"
 	due := t.Due.Format("Mon 1/2/06 3:04pm")
@@ -183,6 +170,6 @@ func printListItem(t Item, severity int, idWidth string) {
 	priority := strings.Repeat("!", t.Priority)
 
 	// Format and print
-	format := "  %s%" + idWidth + "d. %s%s%-" + dueWidth + "s%s%-3s %s%s%-" + nameWidth + "s%s %s%s%s\n"
+	format := "%s%-7d. %s%s%-" + dueWidth + "s%s%-3s %s%s%-" + nameWidth + "s%s %s%s%s\n"
 	fmt.Printf(format, DARK_GREY_C, t.Id, RESET_C, dateCol, due, priorityCol, priority, RESET_C, WHITE_C, name, RESET_C, GREY_C, tags, RESET_C)
 }

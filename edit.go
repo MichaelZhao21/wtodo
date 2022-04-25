@@ -15,9 +15,9 @@ import (
 )
 
 // Function to edit and add items
-func editItem(todos *[]Item, nextId *int, useDb bool, db *sql.DB, add bool) {
+func editItem(db *sql.DB, add bool) {
 	usageInfo := "Usage: wtodo " + os.Args[1] + " <id> [tags]"
-	index := 0
+	var oldItem Item
 
 	// Create and set default temp values
 	temp := Item{}
@@ -29,7 +29,7 @@ func editItem(todos *[]Item, nextId *int, useDb bool, db *sql.DB, add bool) {
 	if add {
 		usageInfo = "Usage: wtodo " + os.Args[1] + "[tags]"
 	} else {
-		index, temp = findItem(todos, usageInfo, useDb, db)
+		oldItem = findItem(usageInfo, db)
 	}
 
 	// Get flags for edit command
@@ -83,7 +83,7 @@ func editItem(todos *[]Item, nextId *int, useDb bool, db *sql.DB, add bool) {
 
 	// Edit name if tag enabled
 	if !add && n {
-		temp.Name = editName(temp.Name)
+		temp.Name = editName(oldItem.Name)
 	}
 
 	// Edit tags if valid and not empty
@@ -101,29 +101,16 @@ func editItem(todos *[]Item, nextId *int, useDb bool, db *sql.DB, add bool) {
 		}
 	}
 
-	// If it's a database, add to database instead of appending to the list
-	if useDb {
-		if add {
-			insertItem(db, temp)
-		} else {
-			updateItem(db, temp)
-		}
-		return
-	}
-
-	// If this is a new item, append it to the array and return
-	// Otherwise replace the current item with the newly edited one
+	// Add or update from database
 	if add {
-		temp.Id = *nextId
-		*todos = append(*todos, temp)
-		*nextId++
+		insertItem(db, temp)
 	} else {
-		(*todos)[index] = temp
+		updateItem(db, temp)
 	}
 }
 
-// Helper function to find an existing ID in the array
-func findItem(todos *[]Item, usageInfo string, useDb bool, db *sql.DB) (int, Item) {
+// Helper function to find an existing item in the database
+func findItem(usageInfo string, db *sql.DB) Item {
 	// If it is an edit, find the item id and replace it
 	// Check for the ID command line argument
 	if len(os.Args) < 3 {
@@ -131,24 +118,15 @@ func findItem(todos *[]Item, usageInfo string, useDb bool, db *sql.DB) (int, Ite
 		os.Exit(1)
 	}
 
-	// If using a database
-	if useDb {
-		key, _ := strconv.Atoi(os.Args[2])
-		item := selectItem(db, key)
-		return item.Id, item
-	}
-
-	// Find the element to edit
+	// Select from database
 	key, _ := strconv.Atoi(os.Args[2])
-	for i := range *todos {
-		if (*todos)[i].Id == key {
-			return i, (*todos)[i]
-		}
-	}
+	item := selectItem(db, key)
+	// TODO: Add error if item is not found
+	return item
 
-	// Error if not found
-	log.Fatalln("ID not found:", os.Args[2], "\n", usageInfo)
-	return 0, Item{}
+	// // Error if not found
+	// log.Fatalln("ID not found:", os.Args[2], "\n", usageInfo)
+	// return 0, Item{}
 }
 
 // Helper function to edit the name of an Item using the default text editor

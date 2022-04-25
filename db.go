@@ -171,3 +171,11 @@ func updateFinishItem(db *sql.DB, id int) {
 		panic(err.Error())
 	}
 }
+
+// Deletes a todo item
+func deleteItemDb(db *sql.DB, id int) {
+	_, err := db.Exec("DELETE FROM Item WHERE id=$1", id)
+	if err != nil {
+		panic(err.Error())
+	}
+}

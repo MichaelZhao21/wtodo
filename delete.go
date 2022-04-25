@@ -7,10 +7,26 @@ import (
 	"strconv"
 )
 
-func finishItem(todos *[]Item, useDb bool, db *sql.DB) {
+func finishItem(db *sql.DB) {
+	n := getDeleteIndex(true)
+	updateFinishItem(db, n)
+}
+
+func deleteItem(db *sql.DB) {
+	n := getDeleteIndex(true)
+	deleteItemDb(db, n)
+}
+
+func getDeleteIndex(finish bool) int {
+	// Get correct usage string
+	action := "delete"
+	if finish {
+		action = "finish"
+	}
+
 	// Check for arguments
 	if len(os.Args) != 3 {
-		fmt.Fprintf(os.Stderr, "Usage: wtodo finish <id>\n")
+		fmt.Fprintf(os.Stderr, "Usage: wtodo %s <id>\n", action)
 		os.Exit(0)
 	}
 	n, err := strconv.Atoi(os.Args[2])
@@ -19,14 +35,5 @@ func finishItem(todos *[]Item, useDb bool, db *sql.DB) {
 		os.Exit(0)
 	}
 
-	// Either update in database or set to finished in list
-	if useDb {
-		updateFinishItem(db, n)
-	} else {
-		(*todos)[n].Finished = true
-	}
-}
-
-func deleteItem(todos *[]Item) {
-
+	return n
 }

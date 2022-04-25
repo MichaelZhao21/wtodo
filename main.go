@@ -75,8 +75,6 @@ type Settings struct {
 // Command: wtodo <action> [tags] <text>
 func main() {
 	// Define list and main id incrementer
-	var todos []Item
-	var nextId int
 	var settings Settings
 	var db *sql.DB
 
@@ -91,40 +89,31 @@ func main() {
 		setup(&settings, true)
 	}
 
-	// Load data from file or database
-	if settings.UseDb {
-		db = connectDb(settings)
-		defer db.Close()
-	} else {
-		loadFile(&todos, &nextId)
-	}
+	// Load data from database
+	db = connectDb(settings)
+	defer db.Close()
 
 	// Case where there are no command line arguments
 	if len(os.Args[1:]) < 1 {
-		list(todos, nextId, settings.UseDb, db)
+		list(db)
 		return
 	}
 
 	// Run commands based on the action statement
 	switch os.Args[1] {
 	case "list", "l", "setup", "s":
-		list(todos, nextId, settings.UseDb, db)
+		list(db)
 	case "add", "insert", "a", "i":
-		editItem(&todos, &nextId, settings.UseDb, db, true)
+		editItem(db, true)
 	case "edit", "e":
-		editItem(&todos, &nextId, settings.UseDb, db, false)
+		editItem(db, false)
 	case "finish", "f":
-		finishItem(&todos, settings.UseDb, db)
+		finishItem(db)
 	case "delete", "d":
-		deleteItem(&todos)
+		deleteItem(db)
 	default:
 		fmt.Printf("%sInvalid Action: %s\n%sUsage: wtodo <action> [options]\n", LIGHT_RED_C, os.Args[1], RESET_C)
 		os.Exit(0)
-	}
-
-	// Save data locally if no db and exit
-	if !settings.UseDb {
-		saveFile(&todos, &nextId)
 	}
 }
 

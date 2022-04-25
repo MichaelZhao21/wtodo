@@ -1,6 +1,6 @@
 # wtodo
 
-A simple command line utility to keep track of your todos, with support for saving locally and in a postgresql database.
+A simple command line utility to keep track of your todos, with all data stored in a postgresql database.
 
 ## Installation
 
