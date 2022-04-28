@@ -100,11 +100,11 @@ func dateSortItems(todos []Item) (late []Item, today []Item, soon []Item, later 
 	}
 
 	// Sort never due items by priority, then ID
-	sort.Slice(todos, func(p, q int) bool {
-		if todos[p].Priority == todos[q].Priority {
-			return todos[p].Id < todos[q].Id
+	sort.Slice(never, func(p, q int) bool {
+		if never[p].Priority == never[q].Priority {
+			return never[p].Id < never[q].Id
 		}
-		return todos[p].Priority < todos[q].Priority
+		return never[p].Priority > never[q].Priority
 	})
 
 	// Concat never to end of later list
